@@ -1,8 +1,8 @@
 {
   "openapi": "3.0.3",
   "info": {
-    "title": "Items API",
-    "description": "A simple REST API for managing items with CRUD operations",
+    "title": "Expense Tracker API",
+    "description": "A comprehensive REST API for managing personal expenses with user authentication, transaction management, analytics, and offline sync capabilities",
     "version": "1.0.0",
     "contact": {
       "name": "API Support",
@@ -19,165 +19,272 @@
       "description": "Development server"
     }
   ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
   "paths": {
-    "/api/items": {
-      "get": {
-        "summary": "Get all items",
-        "description": "Retrieve a list of all items",
-        "operationId": "getItems",
-        "tags": ["Items"],
-        "responses": {
-          "200": {
-            "description": "Successful response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Item"
-                  }
-                },
-                "examples": {
-                  "empty_list": {
-                    "summary": "Empty items list",
-                    "value": []
-                  },
-                  "items_list": {
-                    "summary": "List with items",
-                    "value": [
-                      {
-                        "id": 1,
-                        "name": "Sample Item 1"
-                      },
-                      {
-                        "id": 2,
-                        "name": "Sample Item 2"
-                      }
-                    ]
-                  }
-                }
-              }
-            }
-          },
-          "500": {
-            "$ref": "#/components/responses/InternalServerError"
-          }
-        }
-      },
+    "/api/v1/auth/register": {
       "post": {
-        "summary": "Create a new item",
-        "description": "Create a new item with the provided name",
-        "operationId": "createItem",
-        "tags": ["Items"],
+        "summary": "Register a new user",
+        "description": "Create a new user account",
+        "operationId": "registerUser",
+        "tags": ["Authentication"],
+        "security": [],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CreateItemRequest"
-              },
-              "examples": {
-                "create_item": {
-                  "summary": "Create new item",
-                  "value": {
-                    "name": "New Item"
-                  }
-                }
+                "$ref": "#/components/schemas/UserRegistration"
               }
             }
           }
         },
         "responses": {
           "201": {
-            "description": "Item created successfully",
+            "description": "User registered successfully",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Item"
-                },
-                "examples": {
-                  "created_item": {
-                    "summary": "Successfully created item",
-                    "value": {
-                      "id": 1672531200000,
-                      "name": "New Item"
-                    }
-                  }
+                  "$ref": "#/components/schemas/AuthResponse"
                 }
               }
             }
           },
           "400": {
-            "$ref": "#/components/responses/BadRequest"
-          },
-          "500": {
-            "$ref": "#/components/responses/InternalServerError"
+            "description": "Bad request - validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
           }
         }
       }
     },
-    "/api/items/{id}": {
+    "/api/v1/auth/login": {
+      "post": {
+        "summary": "Login user",
+        "description": "Authenticate user and return JWT token",
+        "operationId": "loginUser",
+        "tags": ["Authentication"],
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserLogin"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/me": {
       "get": {
-        "summary": "Get item by ID",
-        "description": "Retrieve a specific item by its ID",
-        "operationId": "getItemById",
-        "tags": ["Items"],
+        "summary": "Get current user profile",
+        "description": "Retrieve the authenticated user's profile information",
+        "operationId": "getCurrentUser",
+        "tags": ["Authentication"],
+        "responses": {
+          "200": {
+            "description": "User profile retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserProfile"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/transactions": {
+      "get": {
+        "summary": "Get all transactions",
+        "description": "Retrieve all transactions for the authenticated user",
+        "operationId": "getTransactions",
+        "tags": ["Transactions"],
         "parameters": [
           {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "description": "The ID of the item to retrieve",
+            "name": "page",
+            "in": "query",
+            "description": "Page number for pagination",
             "schema": {
               "type": "integer",
-              "format": "int64",
-              "example": 1
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Number of items per page",
+            "schema": {
+              "type": "integer",
+              "default": 10
+            }
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "description": "Filter by category",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "description": "Filter by transaction type",
+            "schema": {
+              "type": "string",
+              "enum": ["income", "expense"]
             }
           }
         ],
         "responses": {
           "200": {
-            "description": "Successful response",
+            "description": "Transactions retrieved successfully",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Item"
-                },
-                "examples": {
-                  "found_item": {
-                    "summary": "Item found",
-                    "value": {
-                      "id": 1,
-                      "name": "Sample Item"
-                    }
-                  }
+                  "$ref": "#/components/schemas/TransactionListResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create a new transaction",
+        "description": "Add a new transaction for the authenticated user",
+        "operationId": "createTransaction",
+        "tags": ["Transactions"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TransactionCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Transaction created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransactionResponse"
                 }
               }
             }
           },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
-          },
-          "500": {
-            "$ref": "#/components/responses/InternalServerError"
+          "400": {
+            "description": "Bad request - validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
           }
         }
-      },
-      "put": {
-        "summary": "Update an item",
-        "description": "Update an existing item by its ID",
-        "operationId": "updateItem",
-        "tags": ["Items"],
+      }
+    },
+    "/api/v1/transactions/{id}": {
+      "get": {
+        "summary": "Get transaction by ID",
+        "description": "Retrieve a specific transaction by its ID",
+        "operationId": "getTransactionById",
+        "tags": ["Transactions"],
         "parameters": [
           {
             "name": "id",
             "in": "path",
             "required": true,
-            "description": "The ID of the item to update",
+            "description": "Transaction ID",
             "schema": {
-              "type": "integer",
-              "format": "int64",
-              "example": 1
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Transaction retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransactionResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Transaction not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Update transaction",
+        "description": "Update an existing transaction",
+        "operationId": "updateTransaction",
+        "tags": ["Transactions"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Transaction ID",
+            "schema": {
+              "type": "string"
             }
           }
         ],
@@ -186,209 +293,700 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/UpdateItemRequest"
-              },
-              "examples": {
-                "update_item": {
-                  "summary": "Update item name",
-                  "value": {
-                    "name": "Updated Item Name"
-                  }
-                }
+                "$ref": "#/components/schemas/TransactionUpdate"
               }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "Item updated successfully",
+            "description": "Transaction updated successfully",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Item"
-                },
-                "examples": {
-                  "updated_item": {
-                    "summary": "Successfully updated item",
-                    "value": {
-                      "id": 1,
-                      "name": "Updated Item Name"
-                    }
-                  }
+                  "$ref": "#/components/schemas/TransactionResponse"
                 }
               }
             }
           },
-          "400": {
-            "$ref": "#/components/responses/BadRequest"
-          },
           "404": {
-            "$ref": "#/components/responses/NotFound"
-          },
-          "500": {
-            "$ref": "#/components/responses/InternalServerError"
+            "description": "Transaction not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
           }
         }
       },
       "delete": {
-        "summary": "Delete an item",
-        "description": "Delete an existing item by its ID",
-        "operationId": "deleteItem",
-        "tags": ["Items"],
+        "summary": "Delete transaction",
+        "description": "Delete a transaction by its ID",
+        "operationId": "deleteTransaction",
+        "tags": ["Transactions"],
         "parameters": [
           {
             "name": "id",
             "in": "path",
             "required": true,
-            "description": "The ID of the item to delete",
+            "description": "Transaction ID",
             "schema": {
-              "type": "integer",
-              "format": "int64",
-              "example": 1
+              "type": "string"
             }
           }
         ],
         "responses": {
           "200": {
-            "description": "Item deleted successfully",
+            "description": "Transaction deleted successfully",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Item"
-                },
-                "examples": {
-                  "deleted_item": {
-                    "summary": "Successfully deleted item",
-                    "value": {
-                      "id": 1,
-                      "name": "Deleted Item"
-                    }
-                  }
+                  "$ref": "#/components/schemas/SuccessResponse"
                 }
               }
             }
           },
           "404": {
-            "$ref": "#/components/responses/NotFound"
-          },
-          "500": {
-            "$ref": "#/components/responses/InternalServerError"
+            "description": "Transaction not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analytics/summary": {
+      "get": {
+        "summary": "Get financial summary",
+        "description": "Get total income, expenses, and balance for the authenticated user",
+        "operationId": "getFinancialSummary",
+        "tags": ["Analytics"],
+        "responses": {
+          "200": {
+            "description": "Financial summary retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FinancialSummary"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analytics/category-breakdown": {
+      "get": {
+        "summary": "Get category breakdown",
+        "description": "Get spending breakdown by category",
+        "operationId": "getCategoryBreakdown",
+        "tags": ["Analytics"],
+        "responses": {
+          "200": {
+            "description": "Category breakdown retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryBreakdown"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analytics/monthly-trends": {
+      "get": {
+        "summary": "Get monthly trends",
+        "description": "Get monthly income and expense trends",
+        "operationId": "getMonthlyTrends",
+        "tags": ["Analytics"],
+        "responses": {
+          "200": {
+            "description": "Monthly trends retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MonthlyTrends"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/sync/bulk": {
+      "post": {
+        "summary": "Bulk create/update transactions",
+        "description": "Create or update multiple transactions in a single request",
+        "operationId": "bulkSyncTransactions",
+        "tags": ["Sync"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkTransactionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Bulk sync completed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BulkSyncResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/sync/unsynced": {
+      "get": {
+        "summary": "Get unsynced transactions",
+        "description": "Retrieve transactions that haven't been synced",
+        "operationId": "getUnsyncedTransactions",
+        "tags": ["Sync"],
+        "responses": {
+          "200": {
+            "description": "Unsynced transactions retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransactionListResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/sync/mark-synced": {
+      "post": {
+        "summary": "Mark transactions as synced",
+        "description": "Mark multiple transactions as synced",
+        "operationId": "markTransactionsSynced",
+        "tags": ["Sync"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MarkSyncedRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Transactions marked as synced successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/sync/status": {
+      "get": {
+        "summary": "Get sync status",
+        "description": "Get the current sync status for the user",
+        "operationId": "getSyncStatus",
+        "tags": ["Sync"],
+        "responses": {
+          "200": {
+            "description": "Sync status retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SyncStatus"
+                }
+              }
+            }
           }
         }
       }
     }
   },
   "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
     "schemas": {
-      "Item": {
+      "UserRegistration": {
         "type": "object",
-        "required": ["id", "name"],
+        "required": ["name", "email", "password"],
         "properties": {
-          "id": {
-            "type": "integer",
-            "format": "int64",
-            "description": "Unique identifier for the item (timestamp-based)",
-            "example": 1672531200000
+          "name": {
+            "type": "string",
+            "maxLength": 50,
+            "example": "John Doe"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "john@example.com"
+          },
+          "password": {
+            "type": "string",
+            "minLength": 6,
+            "example": "password123"
+          }
+        }
+      },
+      "UserLogin": {
+        "type": "object",
+        "required": ["email", "password"],
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "john@example.com"
+          },
+          "password": {
+            "type": "string",
+            "example": "password123"
+          }
+        }
+      },
+      "AuthResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "token": {
+            "type": "string",
+            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+          },
+          "data": {
+            "$ref": "#/components/schemas/UserProfile"
+          }
+        }
+      },
+      "UserProfile": {
+        "type": "object",
+        "properties": {
+          "_id": {
+            "type": "string",
+            "example": "60d5ecb74b24a1234567890a"
           },
           "name": {
             "type": "string",
-            "description": "The name of the item",
-            "example": "Sample Item",
-            "minLength": 1,
-            "maxLength": 255
-          }
-        }
-      },
-      "CreateItemRequest": {
-        "type": "object",
-        "required": ["name"],
-        "properties": {
-          "name": {
+            "example": "John Doe"
+          },
+          "email": {
             "type": "string",
-            "description": "The name of the item to create",
-            "example": "New Item",
-            "minLength": 1,
-            "maxLength": 255
-          }
-        }
-      },
-      "UpdateItemRequest": {
-        "type": "object",
-        "required": ["name"],
-        "properties": {
-          "name": {
+            "format": "email",
+            "example": "john@example.com"
+          },
+          "createdAt": {
             "type": "string",
-            "description": "The updated name of the item",
-            "example": "Updated Item Name",
-            "minLength": 1,
-            "maxLength": 255
+            "format": "date-time",
+            "example": "2023-01-01T00:00:00.000Z"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2023-01-01T00:00:00.000Z"
           }
         }
       },
-      "Error": {
+      "TransactionCreate": {
         "type": "object",
-        "required": ["message"],
+        "required": ["amount", "description", "category", "type"],
         "properties": {
+          "amount": {
+            "type": "number",
+            "minimum": 0,
+            "example": 25.50
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 200,
+            "example": "Coffee at Starbucks"
+          },
+          "category": {
+            "type": "string",
+            "maxLength": 50,
+            "example": "Food & Dining"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["income", "expense"],
+            "example": "expense"
+          },
+          "date": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2023-01-01T00:00:00.000Z"
+          }
+        }
+      },
+      "TransactionUpdate": {
+        "type": "object",
+        "properties": {
+          "amount": {
+            "type": "number",
+            "minimum": 0,
+            "example": 25.50
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 200,
+            "example": "Coffee at Starbucks"
+          },
+          "category": {
+            "type": "string",
+            "maxLength": 50,
+            "example": "Food & Dining"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["income", "expense"],
+            "example": "expense"
+          },
+          "date": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2023-01-01T00:00:00.000Z"
+          }
+        }
+      },
+      "Transaction": {
+        "type": "object",
+        "properties": {
+          "_id": {
+            "type": "string",
+            "example": "60d5ecb74b24a1234567890b"
+          },
+          "amount": {
+            "type": "number",
+            "example": 25.50
+          },
+          "description": {
+            "type": "string",
+            "example": "Coffee at Starbucks"
+          },
+          "category": {
+            "type": "string",
+            "example": "Food & Dining"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["income", "expense"],
+            "example": "expense"
+          },
+          "date": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2023-01-01T00:00:00.000Z"
+          },
+          "user": {
+            "type": "string",
+            "example": "60d5ecb74b24a1234567890a"
+          },
+          "synced": {
+            "type": "boolean",
+            "example": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2023-01-01T00:00:00.000Z"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2023-01-01T00:00:00.000Z"
+          }
+        }
+      },
+      "TransactionResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/Transaction"
+          }
+        }
+      },
+      "TransactionListResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "count": {
+            "type": "integer",
+            "example": 25
+          },
+          "pagination": {
+            "type": "object",
+            "properties": {
+              "page": {
+                "type": "integer",
+                "example": 1
+              },
+              "limit": {
+                "type": "integer",
+                "example": 10
+              },
+              "total": {
+                "type": "integer",
+                "example": 25
+              },
+              "pages": {
+                "type": "integer",
+                "example": 3
+              }
+            }
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Transaction"
+            }
+          }
+        }
+      },
+      "FinancialSummary": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "totalIncome": {
+                "type": "number",
+                "example": 5000.00
+              },
+              "totalExpenses": {
+                "type": "number",
+                "example": 3500.00
+              },
+              "balance": {
+                "type": "number",
+                "example": 1500.00
+              },
+              "transactionCount": {
+                "type": "integer",
+                "example": 45
+              }
+            }
+          }
+        }
+      },
+      "CategoryBreakdown": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "_id": {
+                  "type": "string",
+                  "example": "Food & Dining"
+                },
+                "total": {
+                  "type": "number",
+                  "example": 850.00
+                },
+                "count": {
+                  "type": "integer",
+                  "example": 15
+                }
+              }
+            }
+          }
+        }
+      },
+      "MonthlyTrends": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "_id": {
+                  "type": "object",
+                  "properties": {
+                    "year": {
+                      "type": "integer",
+                      "example": 2023
+                    },
+                    "month": {
+                      "type": "integer",
+                      "example": 1
+                    }
+                  }
+                },
+                "income": {
+                  "type": "number",
+                  "example": 4000.00
+                },
+                "expenses": {
+                  "type": "number",
+                  "example": 2800.00
+                }
+              }
+            }
+          }
+        }
+      },
+      "BulkTransactionRequest": {
+        "type": "object",
+        "required": ["transactions"],
+        "properties": {
+          "transactions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TransactionCreate"
+            }
+          }
+        }
+      },
+      "BulkSyncResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "created": {
+                "type": "integer",
+                "example": 5
+              },
+              "updated": {
+                "type": "integer",
+                "example": 3
+              },
+              "errors": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "index": {
+                      "type": "integer",
+                      "example": 2
+                    },
+                    "error": {
+                      "type": "string",
+                      "example": "Validation error"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "MarkSyncedRequest": {
+        "type": "object",
+        "required": ["transactionIds"],
+        "properties": {
+          "transactionIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "example": ["60d5ecb74b24a1234567890b", "60d5ecb74b24a1234567890c"]
+          }
+        }
+      },
+      "SyncStatus": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "totalTransactions": {
+                "type": "integer",
+                "example": 100
+              },
+              "syncedTransactions": {
+                "type": "integer",
+                "example": 95
+              },
+              "unsyncedTransactions": {
+                "type": "integer",
+                "example": 5
+              },
+              "lastSyncAt": {
+                "type": "string",
+                "format": "date-time",
+                "example": "2023-01-01T12:00:00.000Z"
+              }
+            }
+          }
+        }
+      },
+      "SuccessResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
           "message": {
             "type": "string",
-            "description": "Error message describing what went wrong",
-            "example": "Item not found"
-          }
-        }
-      }
-    },
-    "responses": {
-      "BadRequest": {
-        "description": "Bad request - invalid input",
-        "content": {
-          "application/json": {
-            "schema": {
-              "$ref": "#/components/schemas/Error"
-            },
-            "examples": {
-              "bad_request": {
-                "summary": "Invalid request data",
-                "value": {
-                  "message": "Invalid input data"
-                }
-              }
-            }
+            "example": "Operation completed successfully"
           }
         }
       },
-      "NotFound": {
-        "description": "Resource not found",
-        "content": {
-          "application/json": {
-            "schema": {
-              "$ref": "#/components/schemas/Error"
-            },
-            "examples": {
-              "not_found": {
-                "summary": "Item not found",
-                "value": {
-                  "message": "Item not found"
-                }
-              }
-            }
-          }
-        }
-      },
-      "InternalServerError": {
-        "description": "Internal server error",
-        "content": {
-          "application/json": {
-            "schema": {
-              "$ref": "#/components/schemas/Error"
-            },
-            "examples": {
-              "server_error": {
-                "summary": "Server error",
-                "value": {
-                  "message": "Internal server error"
-                }
-              }
-            }
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": false
+          },
+          "error": {
+            "type": "string",
+            "example": "Error message"
           }
         }
       }
@@ -396,8 +994,20 @@
   },
   "tags": [
     {
-      "name": "Items",
-      "description": "Operations related to item management"
+      "name": "Authentication",
+      "description": "User authentication and profile management"
+    },
+    {
+      "name": "Transactions",
+      "description": "Transaction CRUD operations"
+    },
+    {
+      "name": "Analytics",
+      "description": "Financial analytics and reporting"
+    },
+    {
+      "name": "Sync",
+      "description": "Offline sync and bulk operations"
     }
   ]
 }
