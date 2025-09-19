@@ -1,0 +1,289 @@
+openapi: 3.0.3
+info:
+  title: Items API
+  description: A simple REST API for managing items with CRUD operations
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: support@example.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:3000
+    description: Development server
+
+paths:
+  /api/items:
+    get:
+      summary: Get all items
+      description: Retrieve a list of all items
+      operationId: getItems
+      tags:
+        - Items
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Item'
+              examples:
+                empty_list:
+                  summary: Empty items list
+                  value: []
+                items_list:
+                  summary: List with items
+                  value:
+                    - id: 1
+                      name: "Sample Item 1"
+                    - id: 2
+                      name: "Sample Item 2"
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      summary: Create a new item
+      description: Create a new item with the provided name
+      operationId: createItem
+      tags:
+        - Items
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateItemRequest'
+            examples:
+              create_item:
+                summary: Create new item
+                value:
+                  name: "New Item"
+      responses:
+        '201':
+          description: Item created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Item'
+              examples:
+                created_item:
+                  summary: Successfully created item
+                  value:
+                    id: 1672531200000
+                    name: "New Item"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/items/{id}:
+    get:
+      summary: Get item by ID
+      description: Retrieve a specific item by its ID
+      operationId: getItemById
+      tags:
+        - Items
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The ID of the item to retrieve
+          schema:
+            type: integer
+            format: int64
+            example: 1
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Item'
+              examples:
+                found_item:
+                  summary: Item found
+                  value:
+                    id: 1
+                    name: "Sample Item"
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    put:
+      summary: Update an item
+      description: Update an existing item by its ID
+      operationId: updateItem
+      tags:
+        - Items
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The ID of the item to update
+          schema:
+            type: integer
+            format: int64
+            example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateItemRequest'
+            examples:
+              update_item:
+                summary: Update item name
+                value:
+                  name: "Updated Item Name"
+      responses:
+        '200':
+          description: Item updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Item'
+              examples:
+                updated_item:
+                  summary: Successfully updated item
+                  value:
+                    id: 1
+                    name: "Updated Item Name"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    delete:
+      summary: Delete an item
+      description: Delete an existing item by its ID
+      operationId: deleteItem
+      tags:
+        - Items
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The ID of the item to delete
+          schema:
+            type: integer
+            format: int64
+            example: 1
+      responses:
+        '200':
+          description: Item deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Item'
+              examples:
+                deleted_item:
+                  summary: Successfully deleted item
+                  value:
+                    id: 1
+                    name: "Deleted Item"
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  schemas:
+    Item:
+      type: object
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Unique identifier for the item (timestamp-based)
+          example: 1672531200000
+        name:
+          type: string
+          description: The name of the item
+          example: "Sample Item"
+          minLength: 1
+          maxLength: 255
+
+    CreateItemRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          description: The name of the item to create
+          example: "New Item"
+          minLength: 1
+          maxLength: 255
+
+    UpdateItemRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          description: The updated name of the item
+          example: "Updated Item Name"
+          minLength: 1
+          maxLength: 255
+
+    Error:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          description: Error message describing what went wrong
+          example: "Item not found"
+
+  responses:
+    BadRequest:
+      description: Bad request - invalid input
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          examples:
+            bad_request:
+              summary: Invalid request data
+              value:
+                message: "Invalid input data"
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          examples:
+            not_found:
+              summary: Item not found
+              value:
+                message: "Item not found"
+
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          examples:
+            server_error:
+              summary: Server error
+              value:
+                message: "Internal server error"
+
+tags:
+  - name: Items
+    description: Operations related to item management
