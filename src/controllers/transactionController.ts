@@ -1,11 +1,12 @@
 import { Request, Response } from 'express';
 import Transaction from '../models/Transaction';
+import { IUser } from '../models/User';
 import mongoose from 'mongoose';
 
 // @desc    Get all transactions for logged in user
 // @route   GET /api/v1/transactions
 // @access  Private
-export const getTransactions = async (req: Request, res: Response) => {
+export const getTransactions = async (req: Request & { user?: IUser }, res: Response) => {
   try {
     const { page = 1, limit = 10, type, category, startDate, endDate } = req.query;
     const userId = req.user?._id;
@@ -64,7 +65,7 @@ export const getTransactions = async (req: Request, res: Response) => {
 // @desc    Get single transaction
 // @route   GET /api/v1/transactions/:id
 // @access  Private
-export const getTransaction = async (req: Request, res: Response) => {
+export const getTransaction = async (req: Request & { user?: IUser }, res: Response) => {
   try {
     const transaction = await Transaction.findOne({
       _id: req.params.id,
@@ -100,7 +101,7 @@ export const getTransaction = async (req: Request, res: Response) => {
 // @desc    Create new transaction
 // @route   POST /api/v1/transactions
 // @access  Private
-export const createTransaction = async (req: Request, res: Response) => {
+export const createTransaction = async (req: Request & { user?: IUser }, res: Response) => {
   try {
     // Add user to req.body
     req.body.userId = req.user?._id;
@@ -130,7 +131,7 @@ export const createTransaction = async (req: Request, res: Response) => {
 // @desc    Update transaction
 // @route   PUT /api/v1/transactions/:id
 // @access  Private
-export const updateTransaction = async (req: Request, res: Response) => {
+export const updateTransaction = async (req: Request & { user?: IUser }, res: Response) => {
   try {
     let transaction = await Transaction.findOne({
       _id: req.params.id,
@@ -179,7 +180,7 @@ export const updateTransaction = async (req: Request, res: Response) => {
 // @desc    Delete transaction
 // @route   DELETE /api/v1/transactions/:id
 // @access  Private
-export const deleteTransaction = async (req: Request, res: Response) => {
+export const deleteTransaction = async (req: Request & { user?: IUser }, res: Response) => {
   try {
     const transaction = await Transaction.findOne({
       _id: req.params.id,

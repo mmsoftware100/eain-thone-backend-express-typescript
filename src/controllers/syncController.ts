@@ -1,11 +1,12 @@
 import { Request, Response } from 'express';
 import Transaction from '../models/Transaction';
+import { IUser } from '../models/User';
 import mongoose from 'mongoose';
 
 // @desc    Bulk create transactions
 // @route   POST /api/v1/sync/transactions
 // @access  Private
-export const bulkCreateTransactions = async (req: Request, res: Response) => {
+export const bulkCreateTransactions = async (req: Request & { user?: IUser }, res: Response) => {
   try {
     const { transactions } = req.body;
     const userId = req.user?._id;
@@ -70,7 +71,7 @@ export const bulkCreateTransactions = async (req: Request, res: Response) => {
 // @desc    Bulk update transactions
 // @route   PUT /api/v1/sync/transactions
 // @access  Private
-export const bulkUpdateTransactions = async (req: Request, res: Response) => {
+export const bulkUpdateTransactions = async (req: Request & { user?: IUser }, res: Response) => {
   try {
     const { transactions } = req.body;
     const userId = req.user?._id;
@@ -123,7 +124,7 @@ export const bulkUpdateTransactions = async (req: Request, res: Response) => {
 // @desc    Get unsynced transactions
 // @route   GET /api/v1/sync/unsynced
 // @access  Private
-export const getUnsyncedTransactions = async (req: Request, res: Response) => {
+export const getUnsyncedTransactions = async (req: Request & { user?: IUser }, res: Response) => {
   try {
     const userId = req.user?._id;
 
@@ -148,7 +149,7 @@ export const getUnsyncedTransactions = async (req: Request, res: Response) => {
 // @desc    Mark transactions as synced
 // @route   PATCH /api/v1/sync/mark-synced
 // @access  Private
-export const markTransactionsSynced = async (req: Request, res: Response) => {
+export const markTransactionsSynced = async (req: Request & { user?: IUser }, res: Response) => {
   try {
     const { transactionIds } = req.body;
     const userId = req.user?._id;
@@ -196,7 +197,7 @@ export const markTransactionsSynced = async (req: Request, res: Response) => {
 // @desc    Get sync status
 // @route   GET /api/v1/sync/status
 // @access  Private
-export const getSyncStatus = async (req: Request, res: Response) => {
+export const getSyncStatus = async (req: Request & { user?: IUser }, res: Response) => {
   try {
     const userId = req.user?._id;
 

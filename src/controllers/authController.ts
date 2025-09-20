@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import User from '../models/User';
+import User, { IUser } from '../models/User';
 
 // @desc    Register user
 // @route   POST /api/v1/auth/register
@@ -114,7 +114,7 @@ export const login = async (req: Request, res: Response) => {
 // @desc    Get current logged in user
 // @route   GET /api/v1/auth/me
 // @access  Private
-export const getMe = async (req: Request, res: Response) => {
+export const getMe = async (req: Request & { user?: IUser }, res: Response) => {
   try {
     const user = req.user;
 

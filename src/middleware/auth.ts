@@ -10,7 +10,7 @@ interface JwtPayload {
 }
 
 // Protect routes
-export const protect = async (req: Request, res: Response, next: NextFunction) => {
+export const protect = async (req: Request & { user?: IUser }, res: Response, next: NextFunction) => {
   let token: string | undefined;
 
   if (
@@ -55,7 +55,7 @@ export const protect = async (req: Request, res: Response, next: NextFunction) =
 
 // Grant access to specific roles
 export const authorize = (...roles: string[]) => {
-  return (req: Request, res: Response, next: NextFunction) => {
+  return (req: Request & { user?: IUser }, res: Response, next: NextFunction) => {
     if (!req.user) {
       return res.status(401).json({
         success: false,

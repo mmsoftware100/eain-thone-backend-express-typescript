@@ -1,10 +1,11 @@
 import { Request, Response } from 'express';
 import Transaction from '../models/Transaction';
+import { IUser } from '../models/User';
 
 // @desc    Get financial summary
 // @route   GET /api/v1/analytics/summary
 // @access  Private
-export const getSummary = async (req: Request, res: Response) => {
+export const getSummary = async (req: Request & { user?: IUser }, res: Response) => {
   try {
     const userId = req.user?._id;
     const { startDate, endDate } = req.query;
@@ -74,7 +75,7 @@ export const getSummary = async (req: Request, res: Response) => {
 // @desc    Get spending by category
 // @route   GET /api/v1/analytics/categories
 // @access  Private
-export const getCategoryBreakdown = async (req: Request, res: Response) => {
+export const getCategoryBreakdown = async (req: Request & { user?: IUser }, res: Response) => {
   try {
     const userId = req.user?._id;
     const { startDate, endDate, type = 'expense' } = req.query;
@@ -121,7 +122,7 @@ export const getCategoryBreakdown = async (req: Request, res: Response) => {
 // @desc    Get monthly trends
 // @route   GET /api/v1/analytics/trends
 // @access  Private
-export const getMonthlyTrends = async (req: Request, res: Response) => {
+export const getMonthlyTrends = async (req: Request & { user?: IUser }, res: Response) => {
   try {
     const userId = req.user?._id;
     const { year = new Date().getFullYear() } = req.query;
