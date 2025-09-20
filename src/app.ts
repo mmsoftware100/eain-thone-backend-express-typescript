@@ -6,6 +6,7 @@ import authRoutes from './routes/authRoutes';
 import transactionRoutes from './routes/transactionRoutes';
 import analyticsRoutes from './routes/analyticsRoutes';
 import syncRoutes from './routes/syncRoutes';
+import categoryRoutes from './routes/categoryRoutes';
 import { errorHandler } from './middlewares/errorHandler';
 
 const app = express();
@@ -58,6 +59,7 @@ app.use('/api/v1/auth', authLimiter, authRoutes);
 app.use('/api/v1/transactions', transactionRoutes);
 app.use('/api/v1/analytics', analyticsRoutes);
 app.use('/api/v1/sync', syncRoutes);
+app.use('/api/v1/categories', categoryRoutes);
 app.use('/api/items', itemRoutes); // Keep existing items API for backward compatibility
 
 // Global error handler (should be after routes)
